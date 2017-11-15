@@ -1,0 +1,217 @@
+swagger: '2.0'
+info:
+  title: "Pet Shop Example API"
+  version: "0.1"
+host: "[PROJECT_ID].appspot.com"
+x-google-endpoints:
+- name: "[PROJECT_ID].appspot.com"
+  allowCors: "true"
+schemes:
+  - "https"
+consumes:
+  - "application/json"
+produces:
+  - "application/json"
+paths:
+  /pets:
+    get:
+      tags: [Pets]
+      operationId: app.get_pets
+      summary: "Get all pets"
+      parameters:
+        - name: animal_type
+          in: query
+          type: string
+          pattern: "^[a-zA-Z0-9]*$"
+        - name: limit
+          in: query
+          type: integer
+          minimum: 0
+          default: 100
+      responses:
+        200:
+          description: "Return pets"
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Pet'
+  /pets/{pet_id}:
+    get:
+      tags: [Pets]
+      operationId: app.get_pet
+      summary: "Get a single pet"
+      parameters:
+        - $ref: '#/parameters/pet_id'
+      responses:
+        200:
+          description: "Return pet"
+          schema:
+            $ref: '#/definitions/Pet'
+        404:
+          description: "Pet does not exist"
+    put:
+      tags: [Pets]
+      operationId: app.put_pet
+      summary: "Create or update a pet"
+      parameters:
+        - $ref: '#/parameters/pet_id'
+        - name: pet
+          in: body
+          schema:
+            $ref: '#/definitions/Pet'
+      responses:
+        200:
+          description: "Pet updated"
+        201:
+          description: "New pet created"
+    delete:
+      tags: [Pets]
+      operationId: app.delete_pet
+      summary: "Remove a pet"
+      parameters:
+        - $ref: '#/parameters/pet_id'
+      responses:
+        204:
+          description: "Pet was deleted"
+        404:
+          description: "Pet does not exist"
+  /echo:
+    post:
+      description: "Echo back a given message."
+      operationId: app.echo
+      produces:
+      - "application/json"
+      responses:
+        200:
+          description: "Echo"
+          schema:
+            $ref: "#/definitions/echoMessage"
+      parameters:
+      - description: "Message to echo"
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: "#/definitions/echoMessage"
+      security:
+      - api_key: []
+  /auth/info/googleidtoken:
+    get:
+      tags: [Auth]
+      description: "Returns the requests' authentication information. Google ID token"
+      operationId: app.auth_info_google_id_token
+      produces:
+      - "application/json"
+      responses:
+        200:
+          description: "Authentication info."
+          schema:
+            $ref: "#/definitions/authInfoResponse"
+      security:
+      - google_id_token: []
+  /auth/info/firebase:
+    get:
+      tags: [Auth]
+      description: "Returns the requests' authentication information. Firebase auth"
+      operationId: app.auth_info_firebase
+      produces:
+      - "application/json"
+      responses:
+        200:
+          description: "Authentication info."
+          schema:
+            $ref: "#/definitions/authInfoResponse"
+      security:
+      - firebase: []
+  /auth/info/oauth:
+    get:
+      tags: [Auth]
+      description: "Returns the requests' authentication information. Classic OAuth"
+      operationId: app.auth_info_oauth
+      responses:
+        200:
+          description: "Authentication info."
+          schema:
+            $ref: "#/definitions/authInfoResponse"
+      security:
+        - oauth2: ['https://www.googleapis.com/auth/userinfo.email']
+
+parameters:
+  pet_id:
+    name: pet_id
+    description: "Pet's Unique identifier"
+    in: path
+    type: string
+    required: true
+    pattern: "^[a-zA-Z0-9-]+$"
+
+definitions:
+  Pet:
+    type: object
+    required:
+      - name
+      - animal_type
+    properties:
+      id:
+        type: string
+        description: "Unique identifier"
+        example: "123"
+        readOnly: true
+      name:
+        type: string
+        description: "Pet's name"
+        example: "Susie"
+        minLength: 1
+        maxLength: 100
+      animal_type:
+        type: string
+        description: "Kind of animal"
+        example: "cat"
+        minLength: 1
+      tags:
+        type: object
+        description: "Custom tags"
+      created:
+        type: string
+        format: date-time
+        description: "Creation time"
+        example: "2015-07-07T15:49:51.230+02:00"
+        readOnly: true
+  echoMessage:
+    properties:
+      message:
+        type: "string"
+  authInfoResponse:
+    properties:
+      id:
+        type: "string"
+      email:
+        type: "string"
+
+# [START securityDef]
+securityDefinitions:
+  api_key:
+    type: "apiKey"
+    name: "key"
+    in: "query"
+  google_id_token:
+    authorizationUrl: ""
+    flow: "implicit"
+    type: "oauth2"
+    x-google-issuer: "https://accounts.google.com"
+    x-google-jwks_uri: "https://www.googleapis.com/oauth2/v3/certs"
+    x-google-audiences: "[GOOGLE_OAUTH_CLIENT_ID]"
+  firebase:
+    authorizationUrl: ""
+    flow: "implicit"
+    type: "oauth2"
+    x-google-issuer: "https://securetoken.google.com/[PROJECT_ID]"
+    x-google-jwks_uri: "https://www.googleapis.com/service_accounts/v1/metadata/x509/securetoken@system.gserviceaccount.com"
+    x-google-audiences: "[PROJECT_ID]"
+  oauth2:
+    flow: "implicit"
+    type: "oauth2"
+    authorizationUrl: "https://accounts.google.com/o/oauth2/v2/auth"
+    x-tokenInfoUrl: "https://www.googleapis.com/oauth2/v3/tokeninfo"
+    scopes:
+      "https://www.googleapis.com/auth/userinfo.email": User email information
